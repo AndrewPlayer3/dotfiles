@@ -9,6 +9,7 @@
 
 import XMonad
 import XMonad.Layout.Gaps
+import XMonad.Layout.Spacing
 import XMonad.Hooks.ManageDocks
 import XMonad.Util.SpawnOnce
 import XMonad.Util.Run
@@ -185,8 +186,12 @@ myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
 -- The available layouts.  Note that each layout is separated by |||,
 -- which denotes layout choice.
 --
-s = 20
-myLayout = gaps [(U, s), (D, s), (L, s), (R, s)] (avoidStruts (tiled ||| Mirror tiled ||| Full))
+
+myGaps = gaps [(U, 10), (D, 10), (L, 10), (R, 10)]
+
+mySpacing i = spacingRaw False (Border i i i i) True (Border i i i i) True
+
+myLayout = mySpacing 10 (avoidStruts (tiled ||| Mirror tiled ||| Full))
   where
      -- default tiling algorithm partitions the screen into two panes
      tiled   =  Tall nmaster delta ratio
@@ -199,6 +204,7 @@ myLayout = gaps [(U, s), (D, s), (L, s), (R, s)] (avoidStruts (tiled ||| Mirror 
 
      -- Percent of screen to increment by when resizing panes
      delta   = 3/100
+
 
 ------------------------------------------------------------------------
 -- Window rules:
@@ -250,7 +256,7 @@ myLogHook = return ()
 -- By default, do nothing.
 myStartupHook = do
         spawnOnce "nitrogen --restore &"
-        spawnOnce "compton &"
+        spawnOnce "picom &"
 
 ------------------------------------------------------------------------
 -- Now run xmonad with all the defaults we set up.

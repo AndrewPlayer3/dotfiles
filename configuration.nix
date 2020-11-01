@@ -117,6 +117,8 @@
     # Util
     htop
     iotop
+    bat
+    highlight
     neofetch
     cowsay
     lolcat
