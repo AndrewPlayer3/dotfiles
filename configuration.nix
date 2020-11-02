@@ -115,6 +115,7 @@
     firefox
 
     # Util
+    tmux
     htop
     iotop
     bat
