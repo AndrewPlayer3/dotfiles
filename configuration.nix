@@ -45,7 +45,6 @@
   # Enable the Plasma 5 Desktop Environment.
   services.xserver.enable = true;
   services.xserver.displayManager.lightdm.enable = true;
-  # services.xserver.desktopManager.plasma5.enable = true;
   services.xserver.displayManager.defaultSession = "none+qtile";
   services.xserver.windowManager = {
     qtile.enable = true;
