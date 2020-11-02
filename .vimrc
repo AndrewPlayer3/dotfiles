@@ -1,3 +1,7 @@
+f &term == "alacritty"        
+  let &term = "xterm-256color"
+endif
+
 " set UTF-8 encoding
 set enc=utf-8
 set fenc=utf-8
