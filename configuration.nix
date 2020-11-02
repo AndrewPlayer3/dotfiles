@@ -86,7 +86,7 @@
     git
     fish
     zsh
-    alacritty
+    kitty
     
     # Languages
     gcc
@@ -114,6 +114,7 @@
     firefox
 
     # Util
+    tree
     tmux
     htop
     iotop
