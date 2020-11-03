@@ -1,20 +1,41 @@
---
--- xmonad example config file.
---
--- A template showing all available configuration hooks,
--- and how to override the defaults in your own xmonad.hs conf file.
---
--- Normally, you'd only override those defaults you care about.
---
+-- Andrews XMonad Config
+-- 2020
 
+-- Imports
 import XMonad
+import XMonad.Operations
+import System.IO
+import System.Exit
+import XMonad.Util.Run(spawnPipe)
+import XMonad.Util.SpawnOnce
+import XMonad.Actions.SpawnOn
+import XMonad.Util.NamedScratchpad
+import XMonad.Util.EZConfig(additionalKeys)
+
+import Graphics.X11.ExtraTypes.XF86
+import XMonad.Actions.CycleWS
+import XMonad.Hooks.SetWMName
+import XMonad.Hooks.EwmhDesktops
+import XMonad.Hooks.ManageHelpers
+import XMonad.Hooks.UrgencyHook
+import XMonad.Hooks.DynamicLog
+import XMonad.Hooks.ManageDocks    -- dock/tray mgmt
+import Data.Monoid
+import qualified XMonad.StackSet as W
+import qualified Data.Map        as M
+import System.Exit
+--Layouts
+import XMonad.Layout.Grid
+import XMonad.Layout.NoBorders
+import XMonad.Layout.Tabbed
+import XMonad.Layout.Fullscreen
+import XMonad.Layout.ToggleLayouts          -- Full window at any time
+import XMonad.Layout.BinarySpacePartition
+import XMonad.Layout.Mosaic
+import XMonad.Layout.NoFrillsDecoration
+import XMonad.Layout.ThreeColumns
 import XMonad.Layout.Gaps
 import XMonad.Layout.Spacing
-import XMonad.Hooks.ManageDocks
-import XMonad.Util.SpawnOnce
-import XMonad.Util.Run
-import Data.Monoid
-import System.Exit
 
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
@@ -22,7 +43,7 @@ import qualified Data.Map        as M
 -- The preferred terminal program, which is used in a binding below and by
 -- certain contrib modules.
 --
-myTerminal      = "alacritty"
+myTerminal      = "kitty"
 
 -- Whether focus follows the mouse pointer.
 myFocusFollowsMouse :: Bool
@@ -34,7 +55,7 @@ myClickJustFocuses = False
 
 -- Width of the window border in pixels.
 --
-myBorderWidth   = 1
+myBorderWidth   = 0 
 
 -- modMask lets you specify which modkey you want to use. The default
 -- is mod1Mask ("left alt").  You may also consider using mod3Mask
@@ -43,7 +64,6 @@ myBorderWidth   = 1
 --
 myModMask       = mod4Mask
 
--- The default number of workspaces (virtual screens) and their names.
 -- By default we use numeric strings, but any string may be used as a
 -- workspace name. The number of workspaces is determined by the length
 -- of this list.
@@ -52,12 +72,21 @@ myModMask       = mod4Mask
 --
 -- > workspaces = ["web", "irc", "code" ] ++ map show [4..9]
 --
-myWorkspaces    = ["1","2","3","4","5","6","7","8","9"]
 
+xmobarEscape = concatMap doubleLts
+  where doubleLts '<' = "<<"
+        doubleLts x    = [x]
+
+myWorkspaces :: [String]
+myWorkspaces = clickable . (map xmobarEscape) $ ["1","2","3","4","5"]
+  where
+         clickable l = [ "<action=xdotool key alt+" ++ show (n) ++ ">" ++ ws ++ "</action>" |
+                             (i,ws) <- zip [1..5] l,
+                            let n = i ]
 -- Border colors for unfocused and focused windows, respectively.
 --
-myNormalBorderColor  = "#dddddd"
-myFocusedBorderColor = "#ff0000"
+myNormalBorderColor  = "#000000"
+myFocusedBorderColor = "#fcba03"
 
 ------------------------------------------------------------------------
 -- Key bindings. Add, modify or remove key bindings here.
@@ -174,8 +203,8 @@ myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
 
     -- you may also bind events to the mouse scroll wheel (button4 and button5)
     ]
-
-------------------------------------------------------------------------
+                                                                             
+ ------------------------------------------------------------------------
 -- Layouts:
 
 -- You can specify and transform your layouts by modifying these values.
@@ -221,11 +250,15 @@ myLayout = mySpacing 10 (avoidStruts (tiled ||| Mirror tiled ||| Full))
 -- To match on the WM_NAME, you can use 'title' in the same way that
 -- 'className' and 'resource' are used below.
 --
+
 myManageHook = composeAll
-    [ className =? "MPlayer"        --> doFloat
+    [className =? "MPlayer"        --> doFloat
     , className =? "Gimp"           --> doFloat
     , resource  =? "desktop_window" --> doIgnore
-    , resource  =? "kdesktop"       --> doIgnore ]
+    , resource  =? "kdesktop"       --> doIgnore
+      , manageDocks
+      , isFullscreen                --> (doF W.focusDown <+> doFullFloat)
+    ]
 
 ------------------------------------------------------------------------
 -- Event handling
@@ -243,7 +276,6 @@ myEventHook = mempty
 
 -- Perform an arbitrary action on each internal state change or X event.
 -- See the 'XMonad.Hooks.DynamicLog' extension for examples.
---
 myLogHook = return ()
 
 ------------------------------------------------------------------------
@@ -264,9 +296,19 @@ myStartupHook = do
 -- Run xmonad with the settings you specify. No need to modify this.
 --
 main = do
-        xmproc <- spawnPipe "xmobar /home/andrew/.config/.xmobarrc &"
-        xmonad $ docks defaults
-
+        xmproc <- spawnPipe "xmobar /home/andrew/.config/.xmobarrc"
+        xmonad  $ ewmh $ docks $ defaults {
+          logHook = dynamicLogWithPP $ xmobarPP {
+              ppOutput = hPutStrLn xmproc
+            , ppCurrent = xmobarColor "cyan" "" . wrap "[" "]"
+            , ppHiddenNoWindows = xmobarColor "grey" ""
+            , ppTitle   = xmobarColor "cyan"  "" . shorten 40
+            , ppVisible = wrap "(" ")"
+            , ppUrgent  = xmobarColor "red" "yellow"
+        }
+        , manageHook = manageDocks <+> myManageHook
+        , startupHook = myStartupHook
+        }
 -- A structure containing your configuration settings, overriding
 -- fields in the default config. Any you don't override, will
 -- use the defaults defined in xmonad/XMonad/Config.hs
@@ -306,7 +348,7 @@ help = unlines ["The default modifier key is 'alt'. Default keybindings:",
     "mod-Shift-p      Launch gmrun",
     "mod-Shift-c      Close/kill the focused window",
     "mod-Space        Rotate through the available layout algorithms",
-    "mod-Shift-Space  Reset the layouts on the current workSpace to default",
+        "mod-Shift-Space  Reset the layouts on the current workSpace to default",
     "mod-n            Resize/refresh viewed windows to the correct size",
     "",
     "-- move focus up or down the window stack",
@@ -345,4 +387,4 @@ help = unlines ["The default modifier key is 'alt'. Default keybindings:",
     "-- Mouse bindings: default actions bound to mouse events",
     "mod-button1  Set the window to floating mode and move by dragging",
     "mod-button2  Raise the window to the top of the stack",
-    "mod-button3  Set the window to floating mode and resize by dragging"]
+    "mod-button3  Set the window to floating mode and resize by dragging"]                                                                  
