@@ -81,6 +81,7 @@
   # $ nix search wget
   environment.systemPackages = with pkgs; [
     # CLIs
+    killall
     wget
     curl
     git
@@ -112,7 +113,10 @@
 
     # Browsers
     firefox
-
+    
+    # Other
+    discord
+    
     # Util
     tree
     tmux
